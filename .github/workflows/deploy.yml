@@ -1,0 +1,44 @@
+name: Deploy Hugo Site to GitHub Pages
+
+on:
+  push:
+    branches:
+      - hugo  # 当向 hugo 分支推送代码时触发
+
+# 设置GITHUB_TOKEN的权限，以便可以推送代码到main分支
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest  # 使用最新的Ubuntu运行器
+
+    steps:
+      # 1. 检出 hugo 分支的源代码
+      - name: Checkout Hugo Source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive  # 重要：递归拉取子模块（主题）
+          fetch-depth: 0
+
+      # 2. 设置Hugo环境
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true  # 推荐使用扩展版，功能更全
+
+      # 3. 构建Hugo静态网站
+      - name: Build Hugo Site
+        run: hugo --minify
+
+      # 4. 部署到GitHub Pages
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          # GITHUB_TOKEN是一个自动生成的令牌，拥有操作当前仓库的权限
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          # 将Hugo构建输出的 'public' 目录推送到 'main' 分支
+          publish_dir: ./public
+          publish_branch: main
+          force_orphan: true  # 强制清空main分支的历史，只保留最新构建
